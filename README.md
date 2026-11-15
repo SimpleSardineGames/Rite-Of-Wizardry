@@ -7,10 +7,17 @@
 
 ![Gameplay](docs/gameplay.gif)
 <!-- Add a GIF or screenshot later and update the path. -->
+A top-down dungeon crawler roguelike. Begin your journey as a noble wizard of Afyrh and gain vast arcane knowledge as you traverse the portals of the arcane.
+
+**Status:** early development
+
+![Gameplay](docs/gameplay.gif)
+<!-- Add a GIF or screenshot later and update the path. -->
 
 ## Overview
 
-Rite of Wizardry is a top-down dungeon crawler built solo in Unreal Engine 5.8 with C++ and Blueprints. [Two or three sentences: the setting, the core loop, and what you're proudest of.]
+Rite of Wizardry is a dungeon crawler roguelike built solo in Unreal Engine 5.8 with C++ and Blueprints. You play a noble wizard of Afyrh, casting spells such as Fireball, Frost, and Void as you travel through the portals of the arcane. [One or two sentences on how a run works: what happens when you die, and what carries over to the next run.]
+
 
 ## Features
 
