@@ -21,9 +21,11 @@ public class ROWDEVBUILD : ModuleRules
 			"Niagara",
 			"UMG",
 			"Slate"
-		});
+		}); 
+		PublicDependencyModuleNames.AddRange(new string[] { "GameplayAbilities", "GameplayTags", "GameplayTasks" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+
+        PrivateDependencyModuleNames.AddRange(new string[] { });
 
 		PublicIncludePaths.AddRange(new string[] {
 			"ROWDEVBUILD",
