@@ -7,6 +7,8 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Engine/OverlapResult.h"
+#include "Engine/World.h"
 
 AROWFireball::AROWFireball()
 {
@@ -53,25 +55,89 @@ void AROWFireball::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
 		return;
 	}
 
-	// If the target has an Ability System Component, apply the damage effect to it.
-	if (DamageEffect)
+	if (ExplosionRadius > 0.f)
 	{
-		if (IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(OtherActor))
-		{
-			if (UAbilitySystemComponent* TargetASC = TargetInterface->GetAbilitySystemComponent())
-			{
-				FGameplayEffectContextHandle Context = TargetASC->MakeEffectContext();
-				Context.AddSourceObject(this);
+		// Area spell: hit every pawn within the radius of the impact point.
+		TArray<FOverlapResult> Overlaps;
+		FCollisionObjectQueryParams ObjectParams;
+		ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
+		ObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
 
-				const FGameplayEffectSpecHandle Spec = TargetASC->MakeOutgoingSpec(DamageEffect, 1.f, Context);
-				if (Spec.IsValid())
-				{
-					TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
-				}
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
+		if (GetOwner())
+		{
+			QueryParams.AddIgnoredActor(GetOwner());
+		}
+		if (GetInstigator())
+		{
+			QueryParams.AddIgnoredActor(GetInstigator());
+		}
+
+		GetWorld()->OverlapMultiByObjectType(Overlaps, GetActorLocation(), FQuat::Identity, ObjectParams,
+			FCollisionShape::MakeSphere(ExplosionRadius), QueryParams);
+
+		// One actor can show up once per component; only hit each actor once.
+		TSet<AActor*> AlreadyHit;
+		for (const FOverlapResult& Overlap : Overlaps)
+		{
+			AActor* Target = Overlap.GetActor();
+			if (Target && !AlreadyHit.Contains(Target))
+			{
+				AlreadyHit.Add(Target);
+				ApplyEffectsTo(Target);
 			}
 		}
 	}
+	else
+	{
+		ApplyEffectsTo(OtherActor);
+	}
 
-	// Fireballs are used up by any hit, including walls.
+	// Spells are used up by any hit, including walls.
 	Destroy();
+}
+
+void AROWFireball::ApplyEffectsTo(AActor* Target)
+{
+	// Never hurt the caster, even inside its own explosion.
+	if (!Target || Target == GetOwner() || Target == GetInstigator())
+	{
+		return;
+	}
+
+	IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(Target);
+	if (!TargetInterface)
+	{
+		return;
+	}
+
+	UAbilitySystemComponent* TargetASC = TargetInterface->GetAbilitySystemComponent();
+	if (!TargetASC)
+	{
+		return;
+	}
+
+	FGameplayEffectContextHandle Context = TargetASC->MakeEffectContext();
+	Context.AddSourceObject(this);
+
+	TArray<TSubclassOf<UGameplayEffect>> Effects = ExtraEffects;
+	if (DamageEffect)
+	{
+		Effects.Insert(DamageEffect, 0);
+	}
+
+	for (const TSubclassOf<UGameplayEffect>& EffectClass : Effects)
+	{
+		if (!EffectClass)
+		{
+			continue;
+		}
+
+		const FGameplayEffectSpecHandle Spec = TargetASC->MakeOutgoingSpec(EffectClass, 1.f, Context);
+		if (Spec.IsValid())
+		{
+			TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+		}
+	}
 }

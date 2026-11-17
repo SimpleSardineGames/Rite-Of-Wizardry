@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
+#include "GameplayTagContainer.h"
 #include "ROWEnemy.generated.h"
 
 class UAbilitySystemComponent;
 class UGameplayEffect;
+class UMaterialInterface;
 class UROWAttributeSet;
 struct FOnAttributeChangeData;
 
@@ -38,6 +40,16 @@ protected:
 	// Damages the player if they are within AttackRange. Runs on a repeating timer.
 	void TryAttackPlayer();
 
+	// Called when the Status.Slowed tag is added or removed.
+	void OnSlowedTagChanged(const FGameplayTag Tag, int32 NewCount);
+
+	// Movement speed multiplier while slowed by Frost.
+	UPROPERTY(EditDefaultsOnly, Category = "Combat", meta = (ClampMin = "0", ClampMax = "1"))
+	float SlowedSpeedMultiplier = 0.4f;
+
+	// Normal walk speed, saved at BeginPlay so the slow can be undone.
+	float BaseWalkSpeed = 0.f;
+
 	// Gameplay Effect applied to the player on contact (for example GE_Damage_Test).
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
 	TSubclassOf<UGameplayEffect> ContactDamageEffect;
@@ -51,6 +63,29 @@ protected:
 	float AttackInterval = 1.f;
 
 	FTimerHandle AttackTimer;
+
+	// ---- Hit feedback ----
+
+	// Blueprint hook for extra hit feedback (sound, particles, camera shake).
+	UFUNCTION(BlueprintImplementableEvent, Category = "Feedback")
+	void OnDamaged(float DamageTaken);
+
+	void PlayHitFeedback();
+	void ClearHitFlash();
+
+	// Material drawn over the mesh for a moment when hit (for example M_HitFlash). Empty = no flash.
+	UPROPERTY(EditDefaultsOnly, Category = "Feedback")
+	TObjectPtr<UMaterialInterface> HitFlashMaterial;
+
+	// How long the flash stays on, in seconds.
+	UPROPERTY(EditDefaultsOnly, Category = "Feedback", meta = (ClampMin = "0"))
+	float HitFlashDuration = 0.1f;
+
+	// Strength of the push away from the player when hit. 0 = no knockback.
+	UPROPERTY(EditDefaultsOnly, Category = "Feedback", meta = (ClampMin = "0"))
+	float KnockbackStrength = 600.f;
+
+	FTimerHandle HitFlashTimer;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;

@@ -3,8 +3,11 @@
 #include "ROWEnemy.h"
 #include "AbilitySystemComponent.h"
 #include "ROWAttributeSet.h"
+#include "ROWGameplayTags.h"
 #include "GameplayEffect.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Materials/MaterialInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Engine.h"
 #include "TimerManager.h"
@@ -47,6 +50,19 @@ void AROWEnemy::BeginPlay()
 	}
 
 	GetWorldTimerManager().SetTimer(AttackTimer, this, &AROWEnemy::TryAttackPlayer, AttackInterval, true);
+
+	// Listen for Frost's slow tag being added or removed.
+	BaseWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->RegisterGameplayTagEvent(ROWTags::Status_Slowed, EGameplayTagEventType::NewOrRemoved)
+			.AddUObject(this, &AROWEnemy::OnSlowedTagChanged);
+	}
+}
+
+void AROWEnemy::OnSlowedTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	GetCharacterMovement()->MaxWalkSpeed = NewCount > 0 ? BaseWalkSpeed * SlowedSpeedMultiplier : BaseWalkSpeed;
 }
 
 void AROWEnemy::TryAttackPlayer()
@@ -90,5 +106,47 @@ void AROWEnemy::OnHealthChanged(const FOnAttributeChangeData& Data)
 	if (Data.NewValue <= 0.f)
 	{
 		Destroy();
+		return;
+	}
+
+	// Only react to damage, not healing.
+	if (Data.NewValue < Data.OldValue)
+	{
+		PlayHitFeedback();
+		OnDamaged(Data.OldValue - Data.NewValue);
+	}
+}
+
+void AROWEnemy::PlayHitFeedback()
+{
+	// Flash: draw the flash material over the mesh briefly.
+	if (!HitFlashMaterial && GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow,
+			FString::Printf(TEXT("%s has no Hit Flash Material set"), *GetClass()->GetName()));
+	}
+
+	if (HitFlashMaterial && GetMesh())
+	{
+		GetMesh()->SetOverlayMaterial(HitFlashMaterial);
+		GetWorldTimerManager().SetTimer(HitFlashTimer, this, &AROWEnemy::ClearHitFlash, HitFlashDuration, false);
+	}
+
+	// Knockback: push the enemy directly away from the player.
+	if (KnockbackStrength > 0.f)
+	{
+		if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))
+		{
+			const FVector Away = (GetActorLocation() - PlayerPawn->GetActorLocation()).GetSafeNormal2D();
+			LaunchCharacter(Away * KnockbackStrength, true, false);
+		}
+	}
+}
+
+void AROWEnemy::ClearHitFlash()
+{
+	if (GetMesh())
+	{
+		GetMesh()->SetOverlayMaterial(nullptr);
 	}
 }

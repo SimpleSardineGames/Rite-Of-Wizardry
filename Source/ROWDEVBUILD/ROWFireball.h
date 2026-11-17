@@ -12,8 +12,10 @@ class USphereComponent;
 class UStaticMeshComponent;
 
 /**
- * Fireball projectile. Flies straight along its forward vector and, on hitting an actor
- * that has an Ability System Component, applies its damage Gameplay Effect to it.
+ * Spell projectile base (Fireball, Frost, Void are Blueprint children with different settings).
+ * Flies straight along its forward vector. On hitting something it applies DamageEffect plus any
+ * ExtraEffects to targets with an Ability System Component. If ExplosionRadius > 0 it hits every
+ * target in that radius instead of only the one it touched.
  * Spawn it with the shooter set as Owner so it ignores the caster.
  */
 UCLASS()
@@ -31,6 +33,9 @@ protected:
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		FVector NormalImpulse, const FHitResult& Hit);
 
+	// Applies DamageEffect and ExtraEffects to one actor, if it has an Ability System Component.
+	void ApplyEffectsTo(AActor* Target);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USphereComponent> Sphere;
 
@@ -41,7 +46,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
 
-	// Gameplay Effect applied to whatever the fireball hits (for example GE_Damage_Test).
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Fireball")
+	// Gameplay Effect applied to whatever the spell hits (for example GE_Damage_Test).
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell")
 	TSubclassOf<UGameplayEffect> DamageEffect;
+
+	// Additional effects applied on hit, such as a slow for Frost.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell")
+	TArray<TSubclassOf<UGameplayEffect>> ExtraEffects;
+
+	// 0 = single target. Above 0 = damages every target within this radius of the impact (Void).
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell", meta = (ClampMin = "0"))
+	float ExplosionRadius = 0.f;
 };
