@@ -1,10 +1,13 @@
-// Copyright Holden Woods. Rite of Wizardry. - EV2
+// Copyright Holden Woods. Rite of Wizardry.
 
 #include "ROWEnemy.h"
 #include "AbilitySystemComponent.h"
 #include "ROWAttributeSet.h"
+#include "GameplayEffect.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Engine/Engine.h"
+#include "TimerManager.h"
 
 AROWEnemy::AROWEnemy()
 {
@@ -41,6 +44,38 @@ void AROWEnemy::BeginPlay()
 
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UROWAttributeSet::GetHealthAttribute())
 			.AddUObject(this, &AROWEnemy::OnHealthChanged);
+	}
+
+	GetWorldTimerManager().SetTimer(AttackTimer, this, &AROWEnemy::TryAttackPlayer, AttackInterval, true);
+}
+
+void AROWEnemy::TryAttackPlayer()
+{
+	if (!ContactDamageEffect)
+	{
+		return;
+	}
+
+	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (!PlayerPawn || FVector::Dist(GetActorLocation(), PlayerPawn->GetActorLocation()) > AttackRange)
+	{
+		return;
+	}
+
+	// The player takes damage only if it has an Ability System Component.
+	if (IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(PlayerPawn))
+	{
+		if (UAbilitySystemComponent* TargetASC = TargetInterface->GetAbilitySystemComponent())
+		{
+			FGameplayEffectContextHandle Context = TargetASC->MakeEffectContext();
+			Context.AddSourceObject(this);
+
+			const FGameplayEffectSpecHandle Spec = TargetASC->MakeOutgoingSpec(ContactDamageEffect, 1.f, Context);
+			if (Spec.IsValid())
+			{
+				TargetASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+			}
+		}
 	}
 }
 

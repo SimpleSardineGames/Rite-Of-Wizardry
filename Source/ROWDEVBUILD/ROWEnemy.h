@@ -8,6 +8,7 @@
 #include "ROWEnemy.generated.h"
 
 class UAbilitySystemComponent;
+class UGameplayEffect;
 class UROWAttributeSet;
 struct FOnAttributeChangeData;
 
@@ -33,6 +34,23 @@ protected:
 	virtual void BeginPlay() override;
 
 	void OnHealthChanged(const FOnAttributeChangeData& Data);
+
+	// Damages the player if they are within AttackRange. Runs on a repeating timer.
+	void TryAttackPlayer();
+
+	// Gameplay Effect applied to the player on contact (for example GE_Damage_Test).
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+	TSubclassOf<UGameplayEffect> ContactDamageEffect;
+
+	// How close the player must be to take contact damage.
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float AttackRange = 120.f;
+
+	// Seconds between contact damage checks.
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float AttackInterval = 1.f;
+
+	FTimerHandle AttackTimer;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
