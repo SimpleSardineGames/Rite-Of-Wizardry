@@ -4,6 +4,8 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayEffect.h"
+#include "ROWAttributeSet.h"
+#include "ROWGameplayTags.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -121,13 +123,32 @@ void AROWFireball::ApplyEffectsTo(AActor* Target)
 	FGameplayEffectContextHandle Context = TargetASC->MakeEffectContext();
 	Context.AddSourceObject(this);
 
-	TArray<TSubclassOf<UGameplayEffect>> Effects = ExtraEffects;
+	// Damage = BaseDamage x the caster's SpellPower, passed to the effect as a Set By Caller value.
 	if (DamageEffect)
 	{
-		Effects.Insert(DamageEffect, 0);
+		float SpellPower = 1.f;
+		if (IAbilitySystemInterface* CasterInterface = Cast<IAbilitySystemInterface>(GetOwner()))
+		{
+			if (UAbilitySystemComponent* CasterASC = CasterInterface->GetAbilitySystemComponent())
+			{
+				bool bFound = false;
+				const float Value = CasterASC->GetGameplayAttributeValue(UROWAttributeSet::GetSpellPowerAttribute(), bFound);
+				if (bFound)
+				{
+					SpellPower = Value;
+				}
+			}
+		}
+
+		const FGameplayEffectSpecHandle DamageSpec = TargetASC->MakeOutgoingSpec(DamageEffect, 1.f, Context);
+		if (DamageSpec.IsValid())
+		{
+			DamageSpec.Data->SetSetByCallerMagnitude(ROWTags::Data_Damage, BaseDamage * SpellPower);
+			TargetASC->ApplyGameplayEffectSpecToSelf(*DamageSpec.Data.Get());
+		}
 	}
 
-	for (const TSubclassOf<UGameplayEffect>& EffectClass : Effects)
+	for (const TSubclassOf<UGameplayEffect>& EffectClass : ExtraEffects)
 	{
 		if (!EffectClass)
 		{

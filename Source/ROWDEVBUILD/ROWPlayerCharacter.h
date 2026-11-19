@@ -14,6 +14,9 @@ struct FOnAttributeChangeData;
 // Fired whenever health changes. Useful for a health bar widget.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerHealthChanged, float, NewHealth, float, MaxHealth);
 
+// Fired whenever the coin count changes. Useful for a coin counter widget.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerCoinsChanged, int32, NewCoins);
+
 /**
  * The wizard. Adds an Ability System Component and the ROW attribute set to a normal Character,
  * so enemies can damage the player through Gameplay Effects. Restarts the level on death.
@@ -42,10 +45,32 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Combat")
 	void OnDied();
 
+	// ---- Coins ----
+
+	UFUNCTION(BlueprintPure, Category = "Coins")
+	int32 GetCoins() const { return Coins; }
+
+	UFUNCTION(BlueprintCallable, Category = "Coins")
+	void AddCoins(int32 Amount);
+
+	// Removes coins if the player has enough. Returns false (and spends nothing) if not.
+	UFUNCTION(BlueprintCallable, Category = "Coins")
+	bool SpendCoins(int32 Amount);
+
+	UPROPERTY(BlueprintAssignable, Category = "Coins")
+	FOnPlayerCoinsChanged OnPlayerCoinsChanged;
+
+	// ---- Interaction ----
+
+	// Talks to a shopkeeper the player is standing next to. Bind to the Interact key (E).
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void TryInteract();
+
 protected:
 	virtual void BeginPlay() override;
 
 	void OnHealthChanged(const FOnAttributeChangeData& Data);
+	void OnMaxHealthChanged(const FOnAttributeChangeData& Data);
 	void RestartLevel();
 
 	// Seconds between dying and the level restarting.
@@ -60,4 +85,11 @@ protected:
 
 	FTimerHandle RestartTimer;
 	bool bIsDead = false;
+
+	// Coins the player starts a run with.
+	UPROPERTY(EditDefaultsOnly, Category = "Coins", meta = (ClampMin = "0"))
+	int32 StartingCoins = 0;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Coins")
+	int32 Coins = 0;
 };

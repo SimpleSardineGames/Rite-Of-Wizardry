@@ -7,6 +7,7 @@
 #include "GameplayEffect.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Engine.h"
@@ -37,6 +38,11 @@ float AROWEnemy::GetHealth() const
 	return AttributeSet ? AttributeSet->GetHealth() : 0.f;
 }
 
+float AROWEnemy::GetMaxHealth() const
+{
+	return AttributeSet ? AttributeSet->GetMaxHealth() : 0.f;
+}
+
 void AROWEnemy::BeginPlay()
 {
 	Super::BeginPlay();
@@ -44,6 +50,10 @@ void AROWEnemy::BeginPlay()
 	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+		// Per-enemy health (normal vs elite). Set before listening so it doesn't count as a hit.
+		AbilitySystemComponent->SetNumericAttributeBase(UROWAttributeSet::GetMaxHealthAttribute(), StartingHealth);
+		AbilitySystemComponent->SetNumericAttributeBase(UROWAttributeSet::GetHealthAttribute(), StartingHealth);
 
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UROWAttributeSet::GetHealthAttribute())
 			.AddUObject(this, &AROWEnemy::OnHealthChanged);
@@ -105,7 +115,12 @@ void AROWEnemy::OnHealthChanged(const FOnAttributeChangeData& Data)
 
 	if (Data.NewValue <= 0.f)
 	{
-		Destroy();
+		if (!bIsDead)
+		{
+			bIsDead = true;
+			DropLoot();
+			Destroy();
+		}
 		return;
 	}
 
@@ -140,6 +155,27 @@ void AROWEnemy::PlayHitFeedback()
 			const FVector Away = (GetActorLocation() - PlayerPawn->GetActorLocation()).GetSafeNormal2D();
 			LaunchCharacter(Away * KnockbackStrength, true, false);
 		}
+	}
+}
+
+void AROWEnemy::DropLoot()
+{
+	if (!CoinPickupClass || CoinsToDrop <= 0)
+	{
+		return;
+	}
+
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	// Drop at floor level rather than at the capsule's middle.
+	const float HalfHeight = GetCapsuleComponent() ? GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 90.f;
+	const FVector Base = GetActorLocation() - FVector(0.f, 0.f, HalfHeight - 20.f);
+
+	for (int32 i = 0; i < CoinsToDrop; ++i)
+	{
+		const FVector2D Offset = FMath::RandPointInCircle(CoinScatterRadius);
+		GetWorld()->SpawnActor<AActor>(CoinPickupClass, Base + FVector(Offset.X, Offset.Y, 0.f), FRotator::ZeroRotator, Params);
 	}
 }
 

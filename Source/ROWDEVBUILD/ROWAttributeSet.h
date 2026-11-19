@@ -40,6 +40,12 @@ public:
 	FGameplayAttributeData Damage;
 	ATTRIBUTE_ACCESSORS(UROWAttributeSet, Damage)
 
+		// Multiplier on outgoing spell damage (1 = normal, 1.25 = +25%).
+		UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+	FGameplayAttributeData SpellPower;
+	ATTRIBUTE_ACCESSORS(UROWAttributeSet, SpellPower)
+
 		virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 };

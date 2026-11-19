@@ -5,4 +5,5 @@
 namespace ROWTags
 {
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Slowed, "Status.Slowed", "Target is slowed (Frost).");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Data_Damage, "Data.Damage", "Set By Caller magnitude for spell damage.");
 }

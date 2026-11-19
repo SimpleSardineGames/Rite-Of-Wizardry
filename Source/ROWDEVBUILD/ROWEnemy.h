@@ -32,6 +32,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Attributes")
 	float GetHealth() const;
 
+	UFUNCTION(BlueprintPure, Category = "Attributes")
+	float GetMaxHealth() const;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -86,6 +89,29 @@ protected:
 	float KnockbackStrength = 600.f;
 
 	FTimerHandle HitFlashTimer;
+
+	// ---- Stats and loot ----
+
+	// Health this enemy starts with (elites get more). Also sets Max Health.
+	UPROPERTY(EditDefaultsOnly, Category = "Stats", meta = (ClampMin = "1"))
+	float StartingHealth = 100.f;
+
+	// Coin pickup to drop on death (for example BP_Coin).
+	UPROPERTY(EditDefaultsOnly, Category = "Loot")
+	TSubclassOf<AActor> CoinPickupClass;
+
+	// How many coin pickups drop on death. Elites use double.
+	UPROPERTY(EditDefaultsOnly, Category = "Loot", meta = (ClampMin = "0"))
+	int32 CoinsToDrop = 1;
+
+	// How far dropped coins scatter from the body.
+	UPROPERTY(EditDefaultsOnly, Category = "Loot", meta = (ClampMin = "0"))
+	float CoinScatterRadius = 80.f;
+
+	// Runs once on death, just before the enemy is destroyed. The boss overrides it to drop its rewards.
+	virtual void DropLoot();
+
+	bool bIsDead = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;

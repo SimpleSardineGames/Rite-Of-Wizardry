@@ -3,6 +3,7 @@
 #include "ROWPlayerCharacter.h"
 #include "AbilitySystemComponent.h"
 #include "ROWAttributeSet.h"
+#include "ROWShopkeeper.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -50,6 +51,10 @@ void AROWPlayerCharacter::BeginPlay()
 
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UROWAttributeSet::GetHealthAttribute())
 			.AddUObject(this, &AROWPlayerCharacter::OnHealthChanged);
+
+		// So the health bar updates when Max Health Up is bought.
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(UROWAttributeSet::GetMaxHealthAttribute())
+			.AddUObject(this, &AROWPlayerCharacter::OnMaxHealthChanged);
 	}
 
 	// Show the starting health so it's easy to confirm the setup works.
@@ -60,6 +65,32 @@ void AROWPlayerCharacter::BeginPlay()
 	}
 
 	OnPlayerHealthChanged.Broadcast(GetHealth(), GetMaxHealth());
+
+	Coins = StartingCoins;
+	OnPlayerCoinsChanged.Broadcast(Coins);
+}
+
+void AROWPlayerCharacter::AddCoins(int32 Amount)
+{
+	if (Amount <= 0)
+	{
+		return;
+	}
+
+	Coins += Amount;
+	OnPlayerCoinsChanged.Broadcast(Coins);
+}
+
+bool AROWPlayerCharacter::SpendCoins(int32 Amount)
+{
+	if (Amount < 0 || Coins < Amount)
+	{
+		return false;
+	}
+
+	Coins -= Amount;
+	OnPlayerCoinsChanged.Broadcast(Coins);
+	return true;
 }
 
 void AROWPlayerCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
@@ -86,6 +117,30 @@ void AROWPlayerCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 		OnDied();
 
 		GetWorldTimerManager().SetTimer(RestartTimer, this, &AROWPlayerCharacter::RestartLevel, RestartDelay, false);
+	}
+}
+
+void AROWPlayerCharacter::OnMaxHealthChanged(const FOnAttributeChangeData& Data)
+{
+	OnPlayerHealthChanged.Broadcast(GetHealth(), Data.NewValue);
+}
+
+void AROWPlayerCharacter::TryInteract()
+{
+	if (bIsDead)
+	{
+		return;
+	}
+
+	TArray<AActor*> Shopkeepers;
+	GetOverlappingActors(Shopkeepers, AROWShopkeeper::StaticClass());
+
+	if (Shopkeepers.Num() > 0)
+	{
+		if (AROWShopkeeper* Shopkeeper = Cast<AROWShopkeeper>(Shopkeepers[0]))
+		{
+			Shopkeeper->OpenShop(this);
+		}
 	}
 }
 

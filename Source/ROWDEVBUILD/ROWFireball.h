@@ -46,9 +46,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
 
-	// Gameplay Effect applied to whatever the spell hits (for example GE_Damage_Test).
+	// Damage effect applied to whatever the spell hits. Use GE_Spell_Damage, whose Damage modifier
+	// is "Set By Caller" with the tag Data.Damage: the spell fills it with BaseDamage x the caster's SpellPower.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell")
 	TSubclassOf<UGameplayEffect> DamageEffect;
+
+	// Damage before the caster's SpellPower multiplier.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell", meta = (ClampMin = "0"))
+	float BaseDamage = 25.f;
 
 	// Additional effects applied on hit, such as a slow for Frost.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell")

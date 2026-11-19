@@ -8,6 +8,7 @@ UROWAttributeSet::UROWAttributeSet()
 	InitMaxHealth(100.f);
 	InitHealth(100.f);
 	InitDamage(0.f);
+	InitSpellPower(1.f);
 }
 
 void UROWAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -15,6 +16,21 @@ void UROWAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	Super::PreAttributeChange(Attribute, NewValue);
 
 	// Keep Health within 0..MaxHealth.
+	if (Attribute == GetHealthAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
+	}
+	else if (Attribute == GetMaxHealthAttribute() || Attribute == GetSpellPowerAttribute())
+	{
+		NewValue = FMath::Max(NewValue, 0.f);
+	}
+}
+
+void UROWAttributeSet::PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const
+{
+	Super::PreAttributeBaseChange(Attribute, NewValue);
+
+	// Instant effects (healing, upgrades) change the base value; clamp it too.
 	if (Attribute == GetHealthAttribute())
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
@@ -35,5 +51,10 @@ void UROWAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 		{
 			SetHealth(FMath::Clamp(GetHealth() - LocalDamage, 0.f, GetMaxHealth()));
 		}
+	}
+	else if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+	{
+		// Healing can't overfill.
+		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
 	}
 }
