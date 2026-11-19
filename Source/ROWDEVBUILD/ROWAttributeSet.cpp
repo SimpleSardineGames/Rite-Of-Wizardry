@@ -9,6 +9,8 @@ UROWAttributeSet::UROWAttributeSet()
 	InitHealth(100.f);
 	InitDamage(0.f);
 	InitSpellPower(1.f);
+	InitMaxMana(100.f);
+	InitMana(100.f);
 }
 
 void UROWAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -20,7 +22,11 @@ void UROWAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
 	}
-	else if (Attribute == GetMaxHealthAttribute() || Attribute == GetSpellPowerAttribute())
+	else if (Attribute == GetManaAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxMana());
+	}
+	else if (Attribute == GetMaxHealthAttribute() || Attribute == GetSpellPowerAttribute() || Attribute == GetMaxManaAttribute())
 	{
 		NewValue = FMath::Max(NewValue, 0.f);
 	}
@@ -34,6 +40,10 @@ void UROWAttributeSet::PreAttributeBaseChange(const FGameplayAttribute& Attribut
 	if (Attribute == GetHealthAttribute())
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxHealth());
+	}
+	else if (Attribute == GetManaAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxMana());
 	}
 }
 
@@ -56,5 +66,10 @@ void UROWAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 	{
 		// Healing can't overfill.
 		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
+	}
+	else if (Data.EvaluatedData.Attribute == GetManaAttribute())
+	{
+		// Mana Biscuits can't overfill.
+		SetMana(FMath::Clamp(GetMana(), 0.f, GetMaxMana()));
 	}
 }

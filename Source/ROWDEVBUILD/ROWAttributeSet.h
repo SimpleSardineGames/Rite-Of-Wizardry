@@ -45,6 +45,15 @@ public:
 	FGameplayAttributeData SpellPower;
 	ATTRIBUTE_ACCESSORS(UROWAttributeSet, SpellPower)
 
+		// Spent to cast spells; regenerates over time.
+		UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+	FGameplayAttributeData Mana;
+	ATTRIBUTE_ACCESSORS(UROWAttributeSet, Mana)
+
+		UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+	FGameplayAttributeData MaxMana;
+	ATTRIBUTE_ACCESSORS(UROWAttributeSet, MaxMana)
+
 		virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;

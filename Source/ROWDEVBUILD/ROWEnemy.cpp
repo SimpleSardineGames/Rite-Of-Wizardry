@@ -107,12 +107,6 @@ void AROWEnemy::TryAttackPlayer()
 
 void AROWEnemy::OnHealthChanged(const FOnAttributeChangeData& Data)
 {
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Orange,
-			FString::Printf(TEXT("Enemy health: %.0f"), Data.NewValue));
-	}
-
 	if (Data.NewValue <= 0.f)
 	{
 		if (!bIsDead)

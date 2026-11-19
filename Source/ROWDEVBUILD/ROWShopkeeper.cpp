@@ -142,7 +142,8 @@ bool AROWShopkeeper::IsInStock(int32 ItemIndex) const
 	return Items[ItemIndex].Stock == 0 || Bought < Items[ItemIndex].Stock;
 }
 
-// Shows why a purchase failed, so setup mistakes are easy to spot while testing.
+// Warns about setup mistakes (missing Buyer, missing Effect). Normal outcomes like
+// "not enough coins" go to OnPurchaseFailed instead, for the UI to show.
 static void ShopDebugMessage(const FString& Message)
 {
 	if (GEngine)
@@ -169,7 +170,6 @@ bool AROWShopkeeper::TryPurchase(int32 ItemIndex, AROWPlayerCharacter* Buyer)
 
 	if (!IsInStock(ItemIndex))
 	{
-		ShopDebugMessage(FString::Printf(TEXT("%s is sold out."), *Item.Name.ToString()));
 		OnPurchaseFailed(Item, true);
 		return false;
 	}
@@ -190,13 +190,9 @@ bool AROWShopkeeper::TryPurchase(int32 ItemIndex, AROWPlayerCharacter* Buyer)
 	// Takes the coins only if the player can afford it.
 	if (!Buyer->SpendCoins(Item.Price))
 	{
-		ShopDebugMessage(FString::Printf(TEXT("not enough coins for %s (costs %d, you have %d)."),
-			*Item.Name.ToString(), Item.Price, Buyer->GetCoins()));
 		OnPurchaseFailed(Item, false);
 		return false;
 	}
-
-	ShopDebugMessage(FString::Printf(TEXT("bought %s for %d. Coins left: %d."), *Item.Name.ToString(), Item.Price, Buyer->GetCoins()));
 
 	FGameplayEffectContextHandle Context = BuyerASC->MakeEffectContext();
 	Context.AddSourceObject(this);

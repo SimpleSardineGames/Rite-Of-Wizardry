@@ -26,6 +26,9 @@ class ROWDEVBUILD_API AROWFireball : public AActor
 public:
 	AROWFireball();
 
+	UFUNCTION(BlueprintPure, Category = "Spell")
+	float GetManaCost() const { return ManaCost; }
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -50,6 +53,10 @@ protected:
 	// is "Set By Caller" with the tag Data.Damage: the spell fills it with BaseDamage x the caster's SpellPower.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell")
 	TSubclassOf<UGameplayEffect> DamageEffect;
+
+	// Mana spent to cast this spell (0 = free; leave boss bolts at 0).
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell", meta = (ClampMin = "0"))
+	float ManaCost = 0.f;
 
 	// Damage before the caster's SpellPower multiplier.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell", meta = (ClampMin = "0"))
