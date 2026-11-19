@@ -5,7 +5,9 @@
 # First Commit : 11/15/2026
 # Design Conceptualization : 11/5/2026
 
-![Gameplay](docs/gameplay.gif)
+![Gameplay]
+<img width="400" height="225" alt="ROWGameplayTest" src="https://github.com/user-attachments/assets/7812c74e-b471-4ee2-ac1f-a154f0aec3e2" />
+
 <!-- Add a GIF or screenshot later and update the path. -->
 A top-down dungeon crawler roguelike. Begin your journey as a noble wizard of Afyrh and gain vast arcane knowledge as you traverse the portals of the arcane.
 
