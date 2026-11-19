@@ -11,6 +11,7 @@ class UAbilitySystemComponent;
 class UROWAttributeSet;
 class UUserWidget;
 class AROWFireball;
+class UTexture2D;
 struct FOnAttributeChangeData;
 
 // Fired whenever health changes. Useful for a health bar widget.
@@ -18,6 +19,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerHealthChanged, float, NewH
 
 // Fired whenever the coin count changes. Useful for a coin counter widget.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerCoinsChanged, int32, NewCoins);
+
+// Fired when the player switches spells. Useful for a sound or a spell-bar animation.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpellSelected, int32, NewIndex);
 
 /**
  * The wizard. Adds an Ability System Component and the ROW attribute set to a normal Character,
@@ -70,10 +74,46 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Mana")
 	float GetMaxMana() const;
 
+	// The delay to wait between casts: BaseDelay divided by the CastSpeed attribute.
+	// Plug your FireDelay in and use the result for the cooldown Delay node.
+	UFUNCTION(BlueprintPure, Category = "Mana")
+	float GetCastDelay(float BaseDelay) const;
+
 	// Casts a spell toward Direction if there's enough mana for it (the spell's Mana Cost).
 	// Handles the spawn position, the caster as Owner, and spending the mana. Returns true if cast.
 	UFUNCTION(BlueprintCallable, Category = "Mana")
 	bool TryCastSpell(TSubclassOf<AROWFireball> SpellClass, FVector Direction);
+
+	// ---- Spell slots ----
+
+	// Makes slot Index (0 = first) the active spell. Bind the 1/2/3 keys to this.
+	UFUNCTION(BlueprintCallable, Category = "Spells")
+	void SelectSpell(int32 Index);
+
+	// Moves to the next (+1) or previous (-1) spell, wrapping around. Good for Q/E or the mouse wheel.
+	UFUNCTION(BlueprintCallable, Category = "Spells")
+	void CycleSpell(int32 Step);
+
+	// Casts the active spell toward Direction (uses mana). Replaces Try Cast Spell in the firing graph.
+	UFUNCTION(BlueprintCallable, Category = "Spells")
+	bool TryCastSelectedSpell(FVector Direction);
+
+	UFUNCTION(BlueprintPure, Category = "Spells")
+	int32 GetSelectedSpellIndex() const { return SelectedSpellIndex; }
+
+	UFUNCTION(BlueprintPure, Category = "Spells")
+	int32 GetSpellSlotCount() const { return SpellSlots.Num(); }
+
+	// Name, icon and mana cost of the spell in slot Index. Returns false if the slot is empty.
+	UFUNCTION(BlueprintPure, Category = "Spells")
+	bool GetSpellSlotInfo(int32 Index, FText& Name, UTexture2D*& Icon, float& ManaCost) const;
+
+	// True if there's enough mana right now to cast the spell in slot Index.
+	UFUNCTION(BlueprintPure, Category = "Spells")
+	bool CanAffordSpell(int32 Index) const;
+
+	UPROPERTY(BlueprintAssignable, Category = "Spells")
+	FOnSpellSelected OnSpellSelected;
 
 	// ---- Interaction ----
 
@@ -124,10 +164,6 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, Category = "Coins")
 	int32 Coins = 0;
 
-	// Mana restored per second.
-	UPROPERTY(EditDefaultsOnly, Category = "Mana", meta = (ClampMin = "0"))
-	float ManaRegenPerSecond = 8.f;
-
 	// Spells start this far in front of the wizard.
 	UPROPERTY(EditDefaultsOnly, Category = "Mana", meta = (ClampMin = "0"))
 	float SpellSpawnDistance = 100.f;
@@ -137,6 +173,12 @@ protected:
 	void OnOutOfMana();
 
 	void RegenMana();
+
+	// The spells on the spell bar, in order (for example BP_Fireball, BP_Frost, BP_Void).
+	UPROPERTY(EditDefaultsOnly, Category = "Spells")
+	TArray<TSubclassOf<AROWFireball>> SpellSlots;
+
+	int32 SelectedSpellIndex = 0;
 
 	FTimerHandle ManaRegenTimer;
 

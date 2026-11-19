@@ -11,6 +11,8 @@ UROWAttributeSet::UROWAttributeSet()
 	InitSpellPower(1.f);
 	InitMaxMana(100.f);
 	InitMana(100.f);
+	InitManaRegen(8.f);
+	InitCastSpeed(1.f);
 }
 
 void UROWAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -26,7 +28,12 @@ void UROWAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	{
 		NewValue = FMath::Clamp(NewValue, 0.f, GetMaxMana());
 	}
-	else if (Attribute == GetMaxHealthAttribute() || Attribute == GetSpellPowerAttribute() || Attribute == GetMaxManaAttribute())
+	else if (Attribute == GetCastSpeedAttribute())
+	{
+		NewValue = FMath::Max(NewValue, 0.1f); // Never zero: it divides the cast delay.
+	}
+	else if (Attribute == GetMaxHealthAttribute() || Attribute == GetSpellPowerAttribute()
+		|| Attribute == GetMaxManaAttribute() || Attribute == GetManaRegenAttribute())
 	{
 		NewValue = FMath::Max(NewValue, 0.f);
 	}

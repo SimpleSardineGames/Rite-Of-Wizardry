@@ -5,6 +5,7 @@
 #include "ROWAttributeSet.h"
 #include "ROWShopkeeper.h"
 #include "ROWFireball.h"
+#include "Engine/Texture2D.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -162,14 +163,20 @@ float AROWPlayerCharacter::GetMaxMana() const
 	return AttributeSet ? AttributeSet->GetMaxMana() : 0.f;
 }
 
+float AROWPlayerCharacter::GetCastDelay(float BaseDelay) const
+{
+	const float Speed = AttributeSet ? FMath::Max(AttributeSet->GetCastSpeed(), 0.1f) : 1.f;
+	return BaseDelay / Speed;
+}
+
 void AROWPlayerCharacter::RegenMana()
 {
-	if (bIsDead || !AbilitySystemComponent || GetMana() >= GetMaxMana())
+	if (bIsDead || !AbilitySystemComponent || !AttributeSet || GetMana() >= GetMaxMana())
 	{
 		return;
 	}
 
-	const float NewMana = FMath::Min(GetMana() + ManaRegenPerSecond * ManaRegenInterval, GetMaxMana());
+	const float NewMana = FMath::Min(GetMana() + AttributeSet->GetManaRegen() * ManaRegenInterval, GetMaxMana());
 	AbilitySystemComponent->SetNumericAttributeBase(UROWAttributeSet::GetManaAttribute(), NewMana);
 }
 
@@ -207,6 +214,61 @@ bool AROWPlayerCharacter::TryCastSpell(TSubclassOf<AROWFireball> SpellClass, FVe
 
 	AbilitySystemComponent->SetNumericAttributeBase(UROWAttributeSet::GetManaAttribute(), GetMana() - Cost);
 	return true;
+}
+
+void AROWPlayerCharacter::SelectSpell(int32 Index)
+{
+	if (!SpellSlots.IsValidIndex(Index) || !SpellSlots[Index] || Index == SelectedSpellIndex)
+	{
+		return;
+	}
+
+	SelectedSpellIndex = Index;
+	OnSpellSelected.Broadcast(SelectedSpellIndex);
+}
+
+void AROWPlayerCharacter::CycleSpell(int32 Step)
+{
+	const int32 Count = SpellSlots.Num();
+	if (Count == 0)
+	{
+		return;
+	}
+
+	// Wrap around in either direction.
+	const int32 Next = ((SelectedSpellIndex + Step) % Count + Count) % Count;
+	SelectSpell(Next);
+}
+
+bool AROWPlayerCharacter::TryCastSelectedSpell(FVector Direction)
+{
+	return SpellSlots.IsValidIndex(SelectedSpellIndex) && TryCastSpell(SpellSlots[SelectedSpellIndex], Direction);
+}
+
+bool AROWPlayerCharacter::GetSpellSlotInfo(int32 Index, FText& Name, UTexture2D*& Icon, float& ManaCost) const
+{
+	Name = FText::GetEmpty();
+	Icon = nullptr;
+	ManaCost = 0.f;
+
+	if (!SpellSlots.IsValidIndex(Index) || !SpellSlots[Index])
+	{
+		return false;
+	}
+
+	const AROWFireball* Spell = SpellSlots[Index]->GetDefaultObject<AROWFireball>();
+	Name = Spell->GetSpellName();
+	Icon = Spell->GetSpellIcon();
+	ManaCost = Spell->GetManaCost();
+	return true;
+}
+
+bool AROWPlayerCharacter::CanAffordSpell(int32 Index) const
+{
+	FText Name;
+	UTexture2D* Icon = nullptr;
+	float Cost = 0.f;
+	return GetSpellSlotInfo(Index, Name, Icon, Cost) && GetMana() >= Cost;
 }
 
 void AROWPlayerCharacter::StartRagdoll()

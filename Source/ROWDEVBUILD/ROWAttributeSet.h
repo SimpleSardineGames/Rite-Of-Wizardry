@@ -54,6 +54,16 @@ public:
 	FGameplayAttributeData MaxMana;
 	ATTRIBUTE_ACCESSORS(UROWAttributeSet, MaxMana)
 
+		// Mana restored per second.
+		UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+	FGameplayAttributeData ManaRegen;
+	ATTRIBUTE_ACCESSORS(UROWAttributeSet, ManaRegen)
+
+		// Casting speed multiplier (1 = normal, 1.25 = 25% faster). Divides the delay between casts.
+		UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+	FGameplayAttributeData CastSpeed;
+	ATTRIBUTE_ACCESSORS(UROWAttributeSet, CastSpeed)
+
 		virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;

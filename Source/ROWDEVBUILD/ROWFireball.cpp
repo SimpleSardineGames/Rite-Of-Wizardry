@@ -6,6 +6,7 @@
 #include "GameplayEffect.h"
 #include "ROWAttributeSet.h"
 #include "ROWGameplayTags.h"
+#include "ROWEnemy.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -104,6 +105,12 @@ void AROWFireball::ApplyEffectsTo(AActor* Target)
 {
 	// Never hurt the caster, even inside its own explosion.
 	if (!Target || Target == GetOwner() || Target == GetInstigator())
+	{
+		return;
+	}
+
+	// No friendly fire: enemy projectiles (boss, ranged enemies) only hurt the player.
+	if (Cast<AROWEnemy>(GetOwner()) && Cast<AROWEnemy>(Target))
 	{
 		return;
 	}

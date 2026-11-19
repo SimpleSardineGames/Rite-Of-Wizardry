@@ -10,6 +10,7 @@ class UGameplayEffect;
 class UProjectileMovementComponent;
 class USphereComponent;
 class UStaticMeshComponent;
+class UTexture2D;
 
 /**
  * Spell projectile base (Fireball, Frost, Void are Blueprint children with different settings).
@@ -28,6 +29,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Spell")
 	float GetManaCost() const { return ManaCost; }
+
+	const FText& GetSpellName() const { return SpellName; }
+	UTexture2D* GetSpellIcon() const { return SpellIcon; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -53,6 +57,14 @@ protected:
 	// is "Set By Caller" with the tag Data.Damage: the spell fills it with BaseDamage x the caster's SpellPower.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell")
 	TSubclassOf<UGameplayEffect> DamageEffect;
+
+	// Shown on the spell bar.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell")
+	FText SpellName;
+
+	// Shown on the spell bar.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell")
+	TObjectPtr<UTexture2D> SpellIcon;
 
 	// Mana spent to cast this spell (0 = free; leave boss bolts at 0).
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spell", meta = (ClampMin = "0"))
