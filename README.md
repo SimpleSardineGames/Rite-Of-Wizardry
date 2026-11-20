@@ -37,3 +37,9 @@ Rite of Wizardry is a dungeon crawler roguelike built solo in Unreal Engine 5.8 
 - **Template:** Top Down
 - **Version control:** Git with Git LFS
 - **Planning:** Asana, Scrum-style board with sprints
+
+
+## Portfolio
+- holdenwoods2024.wixsite.com
+- **Email:** holdenwoods2024@outlook.com
+- 
