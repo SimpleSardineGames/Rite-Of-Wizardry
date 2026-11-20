@@ -12,10 +12,8 @@ A top-down dungeon crawler roguelike. Begin your journey as a noble wizard of Af
 
 **Status:** early development
 
-![Gameplay](docs/gameplay.gif)
-<!-- Add a GIF or screenshot later and update the path. -->
 
-![Watch the full walkthrough]
+## Full WalkThrough
 https://youtu.be/GTosUbr97BM
 ## Overview
 
