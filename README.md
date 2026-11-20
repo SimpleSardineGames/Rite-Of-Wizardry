@@ -5,6 +5,11 @@
 # First Commit : 11/15/2026
 # Design Conceptualization : 11/5/2026
 
+- ## Play It
+***: unzip and run `ROWDEVBUILD.exe`. No Unreal Engine needed.
+
+https://github.com/SimpleSardineGames/Rite-Of-Wizardry/releases/tag/v0.1
+
 <img width="400" height="225" alt="ROWGameplayTest" src="https://github.com/user-attachments/assets/7812c74e-b471-4ee2-ac1f-a154f0aec3e2" />
 
 <!-- Add a GIF or screenshot later and update the path. -->
@@ -42,4 +47,6 @@ Rite of Wizardry is a dungeon crawler roguelike built solo in Unreal Engine 5.8 
 ## Portfolio
 - holdenwoods2024.wixsite.com
 - **Email:** holdenwoods2024@outlook.com
-- 
+
+- ## Play It
+***: unzip and run `ROWDEVBUILD.exe`. No Unreal Engine needed.
